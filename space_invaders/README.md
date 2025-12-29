@@ -26,6 +26,12 @@ You need Python 3.6 or higher installed on your system.
 
 ### Install Pygame
 
+**Option 1 - Using requirements.txt (recommended):**
+```bash
+pip install -r requirements.txt
+```
+
+**Option 2 - Direct install:**
 ```bash
 pip install pygame
 ```
@@ -104,11 +110,49 @@ Make sure all these files are in the same directory:
 
 ## Troubleshooting
 
-If you get a "No module named 'pygame'" error:
+### ModuleNotFoundError: No module named 'pygame'
+
+If you get this error, pygame is not installed. Try these solutions:
+
+**Option 1 - Using requirements.txt:**
 ```bash
-pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**Option 2 - Basic install:**
+```bash
 pip install pygame
 ```
+
+**Option 3 - If you have multiple Python versions:**
+```bash
+pip3 install -r requirements.txt
+```
+
+**Option 4 - If pip is not recognized:**
+```bash
+python -m pip install -r requirements.txt
+```
+
+**Option 5 - For macOS users:**
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+**Option 6 - Upgrade pip first:**
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+**Option 7 - Using virtual environment (recommended):**
+```bash
+python3 -m venv path/to/venv
+source path/to/venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+### Other Issues
 
 If images don't load, make sure all PNG files are in the same directory as the Python script.
 
