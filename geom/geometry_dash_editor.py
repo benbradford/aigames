@@ -111,7 +111,7 @@ class Editor:
                 pygame.draw.rect(self.screen, WHITE, (WIDTH // 2 - level_text.get_width() // 2 - 20, y_pos, 10, 30))
         
         # Instructions
-        instructions = self.font.render("UP/DOWN to select, SPACE to edit", True, WHITE)
+        instructions = self.font.render("UP/DOWN to select, ENTER to edit", True, WHITE)
         self.screen.blit(instructions, (WIDTH // 2 - instructions.get_width() // 2, HEIGHT - 100))
     
     def start_editing_level(self):
@@ -384,7 +384,7 @@ class Editor:
                             self.selected_level_index = (self.selected_level_index - 1) % len(self.level_files)
                         elif event.key == pygame.K_DOWN:
                             self.selected_level_index = (self.selected_level_index + 1) % len(self.level_files)
-                        elif event.key == pygame.K_SPACE:
+                        elif event.key == pygame.K_RETURN:
                             self.start_editing_level()
                 elif self.state == 'editing':
                     if event.type == pygame.KEYDOWN:

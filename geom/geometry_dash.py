@@ -69,7 +69,7 @@ def select_level():
                     selected_index = (selected_index - 1) % len(level_files)
                 elif event.key == pygame.K_DOWN:
                     selected_index = (selected_index + 1) % len(level_files)
-                elif event.key == pygame.K_SPACE:
+                elif event.key == pygame.K_RETURN:
                     return level_files[selected_index]
         
         # Draw
@@ -91,7 +91,7 @@ def select_level():
                 pygame.draw.rect(screen, WHITE, (WIDTH // 2 - level_text.get_width() // 2 - 20, y_pos, 10, 30))
         
         # Instructions
-        instructions = font.render("UP/DOWN to select, SPACE to play", True, WHITE)
+        instructions = font.render("UP/DOWN to select, ENTER to play", True, WHITE)
         screen.blit(instructions, (WIDTH // 2 - instructions.get_width() // 2, HEIGHT - 100))
         
         pygame.display.flip()
