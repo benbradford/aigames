@@ -1,0 +1,7 @@
+# Test level - short and close together
+850,440,20,60,red
+900,410,80,60,green
+1000,440,20,60,red
+1100,380,60,60,green
+1200,440,20,60,red
+FINISH,1230

@@ -1,0 +1,3 @@
+# Level 4: Single block test
+900,440,20,60,red
+FINISH,925

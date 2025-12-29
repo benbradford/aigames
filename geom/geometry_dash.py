@@ -1,6 +1,8 @@
 import pygame
 import math
 import random
+import os
+import glob
 
 pygame.init()
 
@@ -18,6 +20,83 @@ WHITE = (255, 255, 255)
 BLUE = (0, 100, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+
+def load_level(filename):
+    print(f"Loading level: {filename}")
+    obstacles = []
+    finish_line_x = 1000  # Default fallback
+    try:
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    parts = line.split(',')
+                    if len(parts) == 5:
+                        x, y, width, height, obj_type = parts
+                        is_platform = obj_type.strip() == 'green'
+                        obstacles.append(Obstacle(int(x), is_platform, int(width), int(y), int(height)))
+                    elif len(parts) == 2 and parts[0] == 'FINISH':
+                        finish_line_x = int(parts[1])
+                        print(f"Finish line set to: {finish_line_x}")
+    except FileNotFoundError:
+        print(f"Level file {filename} not found!")
+    
+    print(f"Final finish line position: {finish_line_x}")
+    return obstacles, finish_line_x
+
+def select_level():
+    level_files = glob.glob("level*.txt")
+    if not level_files:
+        return None
+    
+    level_files.sort()
+    selected_index = 0
+    
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Geometry Dash Clone - Select Level")
+    clock = pygame.time.Clock()
+    font = pygame.font.Font(None, 36)
+    
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return None
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected_index = (selected_index - 1) % len(level_files)
+                elif event.key == pygame.K_DOWN:
+                    selected_index = (selected_index + 1) % len(level_files)
+                elif event.key == pygame.K_SPACE:
+                    return level_files[selected_index]
+        
+        # Draw
+        screen.fill(BLACK)
+        
+        # Title
+        title = font.render("SELECT LEVEL", True, WHITE)
+        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 100))
+        
+        # Level list
+        for i, level_file in enumerate(level_files):
+            color = WHITE if i == selected_index else (128, 128, 128)
+            level_text = font.render(f"{i + 1}. {level_file}", True, color)
+            y_pos = 200 + i * 50
+            screen.blit(level_text, (WIDTH // 2 - level_text.get_width() // 2, y_pos))
+            
+            # Cursor
+            if i == selected_index:
+                pygame.draw.rect(screen, WHITE, (WIDTH // 2 - level_text.get_width() // 2 - 20, y_pos, 10, 30))
+        
+        # Instructions
+        instructions = font.render("UP/DOWN to select, SPACE to play", True, WHITE)
+        screen.blit(instructions, (WIDTH // 2 - instructions.get_width() // 2, HEIGHT - 100))
+        
+        pygame.display.flip()
+        clock.tick(FPS)
+    
+    return None
 
 class Player:
     def __init__(self):
@@ -92,11 +171,24 @@ class Player:
     def draw(self, screen):
         pygame.draw.rect(screen, BLUE, (self.x, self.y, PLAYER_SIZE, PLAYER_SIZE))
 
-class Obstacle:
-    def __init__(self, x, is_platform=False, width=OBSTACLE_WIDTH):
+class FinishLine:
+    def __init__(self, x):
         self.x = x
-        self.y = HEIGHT - GROUND_HEIGHT - OBSTACLE_HEIGHT
+        self.speed = 5  # Same speed as obstacles
+    
+    def update(self):
+        self.x -= self.speed
+    
+    def draw(self, screen):
+        if self.x > -10 and self.x < WIDTH + 10:
+            pygame.draw.line(screen, BLUE, (self.x, 0), (self.x, HEIGHT - GROUND_HEIGHT), 5)
+
+class Obstacle:
+    def __init__(self, x, is_platform=False, width=OBSTACLE_WIDTH, y=None, height=OBSTACLE_HEIGHT):
+        self.x = x
+        self.y = y if y is not None else HEIGHT - GROUND_HEIGHT - height
         self.width = width
+        self.height = height
         self.speed = 5
         self.is_platform = is_platform
     
@@ -105,13 +197,13 @@ class Obstacle:
     
     def draw(self, screen):
         color = GREEN if self.is_platform else RED
-        pygame.draw.rect(screen, color, (self.x, self.y, self.width, OBSTACLE_HEIGHT))
+        pygame.draw.rect(screen, color, (self.x, self.y, self.width, self.height))
     
     def collides_with(self, player):
         if not (self.x < player.x + PLAYER_SIZE and 
                 self.x + self.width > player.x and
                 self.y < player.y + PLAYER_SIZE and
-                self.y + OBSTACLE_HEIGHT > player.y):
+                self.y + self.height > player.y):
             return False
         
         if self.is_platform:
@@ -130,68 +222,76 @@ class Obstacle:
                 player.y <= self.y + 5)
 
 def main():
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Geometry Dash Clone")
-    clock = pygame.time.Clock()
-    
-    player = Player()
-    obstacles = []
-    scroll_x = 0
-    spawn_timer = 0
-    
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+    while True:
+        # Select level
+        level_file = select_level()
+        if not level_file:
+            break
+        
+        screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption(f"Geometry Dash Clone - {level_file}")
+        clock = pygame.time.Clock()
+        
+        player = Player()
+        obstacles, finish_line_x = load_level(level_file)
+        finish_line = FinishLine(finish_line_x)
+        scroll_x = 0
+        
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        player.jump()
+            
+            # Update
+            player.update(obstacles)
+            scroll_x += 3  # Scenery movement speed
+            
+            # Check finish line - when player crosses it
+            if player.x >= finish_line.x:
+                print(f"Level Complete! Player crossed finish line")
                 running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    player.jump()
-        
-        # Update
-        player.update(obstacles)
-        scroll_x += 3  # Scenery movement speed
-        
-        # Update obstacles and check collisions
-        for obstacle in obstacles[:]:
-            obstacle.update()
-            if obstacle.x + obstacle.width < 0:
-                obstacles.remove(obstacle)
-            elif obstacle.collides_with(player):
-                print("Game Over!")
-                running = False
-        
-        # Spawn obstacles
-        spawn_timer += 1
-        if spawn_timer > random.randint(60, 120):  # Random spawn interval
-            if random.choice([True, False]):  # 50% chance for platform
-                width = random.choice([OBSTACLE_WIDTH, 80, 120])  # Varying platform widths
-                obstacles.append(Obstacle(WIDTH, True, width))
-            else:
-                obstacles.append(Obstacle(WIDTH, False))
-            spawn_timer = 0
-        
-        # Draw
-        screen.fill(BLACK)
-        
-        # Draw ground with scrolling effect
-        ground_segments = WIDTH // 50 + 2
-        for i in range(ground_segments):
-            x = (i * 50 - scroll_x % 50)
-            pygame.draw.rect(screen, GREEN, (x, HEIGHT - GROUND_HEIGHT, 50, GROUND_HEIGHT))
-            pygame.draw.line(screen, WHITE, (x, HEIGHT - GROUND_HEIGHT), (x + 50, HEIGHT - GROUND_HEIGHT), 2)
-        
-        # Draw background lines for movement effect
-        for i in range(0, WIDTH + 100, 100):
-            x = i - (scroll_x % 100)
-            pygame.draw.line(screen, (50, 50, 50), (x, 0), (x, HEIGHT - GROUND_HEIGHT), 1)
-        
-        player.draw(screen)
-        for obstacle in obstacles:
-            obstacle.draw(screen)
-        
-        pygame.display.flip()
-        clock.tick(FPS)
+                continue
+            
+            # Update obstacles and finish line
+            finish_line.update()
+            for obstacle in obstacles[:]:
+                obstacle.update()
+                if obstacle.x + obstacle.width < 0:
+                    obstacles.remove(obstacle)
+                elif obstacle.collides_with(player):
+                    print("Game Over!")
+                    running = False
+                    break
+            
+            # Draw
+            screen.fill(BLACK)
+            
+            # Draw ground with scrolling effect
+            ground_segments = WIDTH // 50 + 2
+            for i in range(ground_segments):
+                x = (i * 50 - scroll_x % 50)
+                pygame.draw.rect(screen, GREEN, (x, HEIGHT - GROUND_HEIGHT, 50, GROUND_HEIGHT))
+                pygame.draw.line(screen, WHITE, (x, HEIGHT - GROUND_HEIGHT), (x + 50, HEIGHT - GROUND_HEIGHT), 2)
+            
+            # Draw background lines for movement effect
+            for i in range(0, WIDTH + 100, 100):
+                x = i - (scroll_x % 100)
+                pygame.draw.line(screen, (50, 50, 50), (x, 0), (x, HEIGHT - GROUND_HEIGHT), 1)
+            
+            # Draw finish line
+            finish_line.draw(screen)
+            
+            player.draw(screen)
+            for obstacle in obstacles:
+                obstacle.draw(screen)
+            
+            pygame.display.flip()
+            clock.tick(FPS)
     
     pygame.quit()
 

@@ -1,0 +1,14 @@
+# Level format: x,y,width,height,type
+# type: red = deadly obstacle, green = safe platform
+# x,y are absolute positions, width,height are dimensions
+
+# Level 1: Basic jumps and platforms
+900,440,20,60,red
+1000,410,80,60,green
+1200,440,20,60,red
+1400,380,120,60,green
+1600,440,20,60,red
+1800,440,20,60,red
+2000,410,100,60,green
+2200,440,20,60,red
+FINISH,2230
