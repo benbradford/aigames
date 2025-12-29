@@ -1,3 +1,9 @@
-# Level 4: Single block test
-900,440,20,60,red
-FINISH,925
+# Level created with Geometry Dash Editor
+560,440,60,60,green
+660,380,60,60,green
+800,380,60,60,green
+940,380,60,60,green
+620,480,180,20,red
+800,480,180,20,red
+1140,380,20,80,red
+FINISH,1220

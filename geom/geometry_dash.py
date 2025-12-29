@@ -37,11 +37,12 @@ def load_level(filename):
                         obstacles.append(Obstacle(int(x), is_platform, int(width), int(y), int(height)))
                     elif len(parts) == 2 and parts[0] == 'FINISH':
                         finish_line_x = int(parts[1])
-                        print(f"Finish line set to: {finish_line_x}")
+
     except FileNotFoundError:
-        print(f"Level file {filename} not found!")
+        pass
+
     
-    print(f"Final finish line position: {finish_line_x}")
+
     return obstacles, finish_line_x
 
 def select_level():
@@ -110,12 +111,19 @@ class Player:
         self.platform_y = self.ground_y
         self.falling = False
         self.jump_start_y = self.ground_y
+        self.space_held = False
+        self.jump_power = 0
         
-    def jump(self):
+    def start_jump(self):
         if not self.jumping and not self.falling:
             self.jumping = True
             self.jump_time = 0
             self.jump_start_y = self.platform_y if self.on_platform else self.ground_y
+            self.space_held = True
+            self.jump_power = 15  # Start with minimum jump power
+    
+    def end_jump(self):
+        self.space_held = False
     
     def update(self, obstacles):
         # Check if on platform
@@ -141,15 +149,23 @@ class Player:
         if not self.on_platform:
             self.platform_y = self.ground_y
         
+        # Handle space being held for variable jump power
+        if self.space_held and self.jumping and self.jump_power < 45:  # Max 45 frames of charging
+            self.jump_power += 1
+        
         if self.jumping:
-            # Sine wave jump effect
+            # Sine wave jump effect with variable height
             self.jump_time += 0.08
             if self.jump_time <= math.pi:
-                jump_height = math.sin(self.jump_time) * 120
+                base_height = 120
+                height_multiplier = self.jump_power / 30.0  # 0.5x to 1.5x height
+                jump_height = math.sin(self.jump_time) * base_height * height_multiplier
                 self.y = self.jump_start_y - jump_height
             else:
                 self.jumping = False
                 self.jump_time = 0
+                self.jump_power = 0
+                self.space_held = False
                 # Start falling if not on a platform, maintaining downward velocity
                 if not self.on_platform:
                     self.falling = True
@@ -245,7 +261,10 @@ def main():
                     return
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        player.jump()
+                        player.start_jump()
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        player.end_jump()
             
             # Update
             player.update(obstacles)
@@ -253,7 +272,6 @@ def main():
             
             # Check finish line - when player crosses it
             if player.x >= finish_line.x:
-                print(f"Level Complete! Player crossed finish line")
                 running = False
                 continue
             
@@ -264,7 +282,6 @@ def main():
                 if obstacle.x + obstacle.width < 0:
                     obstacles.remove(obstacle)
                 elif obstacle.collides_with(player):
-                    print("Game Over!")
                     running = False
                     break
             
