@@ -1,0 +1,8 @@
+# Level created with Geometry Dash Editor
+360,480,20,20,red
+380,480,20,20,red
+400,480,20,20,red
+420,480,20,20,red
+460,480,20,20,red
+440,480,20,20,red
+FINISH,1000
